@@ -6,6 +6,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type user_raw struct {
+	user_id  string
+	email    string
+	password string
+}
+
 func connectDB(dbFile string) (*sql.DB, error) {
 
 	db, err := sql.Open("sqlite3", dbFile)
@@ -69,4 +75,17 @@ func insertUser(db *sql.DB, email string, password string) (sql.Result, error) {
 	}
 
 	return result, nil
+}
+
+func getUser(db *sql.DB) (*user_raw, error) {
+	var raw user_raw
+
+	query := `SELECT * FROM users`
+	err := db.QueryRow(query).Scan(&raw.user_id, &raw.email, &raw.password)
+
+	if err != nil {
+		return nil, err
+	} else {
+		return &raw, nil
+	}
 }
