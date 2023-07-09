@@ -12,24 +12,36 @@ type User struct {
 	Email    string `json:"email"`
 }
 
+func jsonContentTypeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.Header().Add("Content-Type", "application/json")
+
+		next.ServeHTTP(rw, r)
+	})
+}
+
 func main() {
-	http.HandleFunc("/", func(wr http.ResponseWriter, r *http.Request) {
-		wr.Write([]byte("Hello"))
+
+	mux := http.NewServeMux()
+
+	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
+		rw.Write([]byte("Hello"))
 	})
 
-	http.HandleFunc("/users", func(wr http.ResponseWriter, r *http.Request) {
+	userHandler := http.HandlerFunc(func(wr http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet: // 조회
-			json.NewEncoder(wr).Encode(users) // 인코딩
+			json.NewEncoder(wr).Encode(users)
 		case http.MethodPost: // 등록
 			var user User
-			json.NewDecoder(r.Body).Decode(&user) // 디코딩
+			json.NewDecoder(r.Body).Decode(&user)
 
 			users[user.Email] = &user
 
-			json.NewEncoder(wr).Encode(user) // 인코딩
+			json.NewEncoder(wr).Encode(user)
 		}
 	})
 
+	mux.Handle("/users", jsonContentTypeMiddleware(userHandler))
 	http.ListenAndServe(":8080", nil)
 }
